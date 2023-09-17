@@ -66,7 +66,7 @@ void strapend(char* str, char symb, int len) {
 
 void inf2post(char* outstr, FILE *in) {
 	Stack* S = create();
-	int pty, mainind = 0, ubminchecker = 1, outlen = 0; //если флаг 1, то минус унарный, если флаг 0 - бинарный
+	int pty, mainind = 0, ubminchecker = 1, outlen = 0; //ГҐГ±Г«ГЁ ГґГ«Г ГЈ 1, ГІГ® Г¬ГЁГ­ГіГ± ГіГ­Г Г°Г­Г»Г©, ГҐГ±Г«ГЁ ГґГ«Г ГЈ 0 - ГЎГЁГ­Г Г°Г­Г»Г©
 	char* num, * pinstr, * instr;
 	double trash;
 	instr = (char*)malloc(500020 * sizeof(char));
@@ -172,7 +172,7 @@ void stackcalc(char* inputstr) {
 			else {
 				token = strtod(num, &trash);
 				push(S, token);
-				num[0] = 0; //очищаем num
+				num[0] = 0; //Г®Г·ГЁГ№Г ГҐГ¬ num
 				len = 0;
 			}
 		}
