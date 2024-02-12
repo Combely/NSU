@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <cstdlib>
 #include <time.h>
+#include <stdlib.h>
 
 struct Matrix {
 	double *matrix = NULL;
@@ -15,25 +16,30 @@ Matrix MatrixInit(int rows, int columns) {
 	Matrix unfilled;
 	unfilled.rows = rows;
 	unfilled.columns = columns;
-	unfilled.matrix = new double[rows * columns];
+	unfilled.matrix = (double*)malloc(rows * columns * sizeof(double));
+	if (unfilled.matrix == NULL) {
+        	printf("Memory not allocated.\n");
+        	exit(0);
+    	}
 	return unfilled;
 }
 
 void MatrixFree(Matrix& input) {
 	if (&input) {
-		delete[] input.matrix;
+		free(input.matrix);
 	}
 }
 
 void MatrixFillA(Matrix& A) {
+	srand(400);
 	double weight = 100;
 	int rows = A.rows;
 	int columns = A.columns;
 	for (int row = 0; row < rows; row++) {
 		for (int column = 0; column < columns; column++) {
-			A.matrix[row * rows + column] = rand() % 11;
-			if (row = column) {
-				A.matrix[row * rows + column] += weight;
+			A.matrix[row * columns + column] = rand() % 11;
+			if (row == column) {
+				A.matrix[row * columns + column] += weight;
 			}
 		}
 	}
@@ -54,16 +60,16 @@ void MatrixFillZero(Matrix& zero) {
 }
 
 void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
-	int r1 = left.rows, c1 = left.columns;
+	int r1 = left.rows, c1 = left.columns; 
 	int r2 = right.rows, c2 = right.columns;
 	double* leftmatrix = left.matrix;
 	double* rightmatrix = right.matrix;
 	double* resmatrix = res.matrix;
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
-			res.matrix[i * r1 + j] = 0;
+			resmatrix[i * c2 + j] = 0;
 			for (int k = 0; k < r2; k++) {
-				resmatrix[i * r1 + j] += leftmatrix[i * r1 + k] * rightmatrix[k * r2 + j];
+				resmatrix[i * c2 + j] += leftmatrix[i * c1 + k] * rightmatrix[k * c2 + j];
 			}
 		}
 	}
@@ -157,7 +163,7 @@ int main(int argc, char** argv) {
 	while (res_criteria_cter != 5) {
 		cycles_cter++;
                 if (cycles_cter > 10000) {
-                        fprintf(stderr, "Unable to get result");
+                        fprintf(stderr, "Unable to get result\n");
                         exit(EXIT_FAILURE);
                 }
 		if (squared_norm_y = GetSquaredNorm(y) < epsilon) {
@@ -172,7 +178,7 @@ int main(int argc, char** argv) {
 		UpdateY(y, A, x, b);
 	}
 	time_t end = time(NULL);
-	printf("Version: Basic\n Matrix size: %u\n Consumed time: %ld", N, end - start);
+	printf("Version: Basic\n Matrix size: %u\n Consumed time: %ld\n", N, end - start);
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
