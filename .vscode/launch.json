@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cppdbg",
+            "name": "Launch",
+            "request": "launch",
+            "program": "${workspaceFolder}/BPP/lab1/basic/grad",
+            "args": ["1000"],
+            "cwd": "${workspaceFolder}/BPP/lab1/basic/"
+        }
+    ]
+}

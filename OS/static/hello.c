@@ -2,7 +2,7 @@
 #include "static_hello.h"
 
 void print_hello() {
-    printf("hello world!\n");
+    printf("Hello world!\n");
 }
 
 int main () {

@@ -62,14 +62,14 @@ void MatrixFillZero(Matrix& zero) {
 void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 	int r1 = left.rows, c1 = left.columns; 
 	int r2 = right.rows, c2 = right.columns;
-	double* leftmatrix = left.matrix;
-	double* rightmatrix = right.matrix;
-	double* resmatrix = res.matrix;
+	double* left_matrix = left.matrix;
+	double* right_matrix = right.matrix;
+	double* res_matrix = res.matrix;
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
-			resmatrix[i * c2 + j] = 0;
+			res_matrix[i * c2 + j] = 0;
 			for (int k = 0; k < r2; k++) {
-				resmatrix[i * c2 + j] += leftmatrix[i * c1 + k] * rightmatrix[k * c2 + j];
+				res_matrix[i * c2 + j] += left_matrix[i * c1 + k] * right_matrix[k * c2 + j];
 			}
 		}
 	}
@@ -77,17 +77,17 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 }
 
 void MatrixFromMatrixSub(Matrix& left, Matrix& right, Matrix& res) {
-	int size = left.rows + left.columns;
-	double* leftmatrix = left.matrix;
-	double* rightmatrix = right.matrix;
-	double* resmatrix = res.matrix;
+	int size = left.rows * left.columns;
+	double* left_matrix = left.matrix;
+	double* right_matrix = right.matrix;
+	double* res_matrix = res.matrix;
 	for (int i = 0; i < size; i++) {
-		resmatrix[i] = leftmatrix[i] - rightmatrix[i];
+		res_matrix[i] = left_matrix[i] - right_matrix[i];
 	}
 }
 
 void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
-	int size = input.rows + input.columns;
+	int size = input.rows * input.columns;
 	double* input_matrix = input.matrix;
 	double* res_matrix = res.matrix;
 	for (int i = 0; i < size; i++) {
@@ -98,11 +98,11 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 
 double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
 	double res = 0;
-	double* lvectdata = lvect.matrix;
-	double* rvectdata = rvect.matrix;
+	double* lvect_data = lvect.matrix;
+	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
 	for (int i = 0; i < size; i++) {
-		res += lvectdata[i] * rvectdata[i];
+		res += lvect_data[i] * rvect_data[i];
 	}
 	return res;
 }
