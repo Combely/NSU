@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <time.h>
+#include <omp.h>
 
 struct Matrix {
 	double *matrix = NULL;
@@ -34,14 +35,21 @@ double UpdateBeta(Matrix& r, double prev_scalar_r);
 void UpdateZ(Matrix& r, double beta, Matrix& z);
 
 int main(int argc, char** argv) {
-	if (argc < 2) {
-		N = 1000;
+	if (argc < 3) {
+		omp_set_num_threads(2);
+		if (argc == 2) {
+			N = atoi(argv[1]);
+		}
+		else {
+			N = 1000;
+		}
 	}
 	else {
 		N = atoi(argv[1]);
+    	omp_set_num_threads(atoi(argv[2]));
 	}
 
-	time_t start = time(NULL);
+	double start = omp_get_wtime();
 	
 	buffer = MatrixInit(N, 1);
 	Matrix A = MatrixInit(N, N);
@@ -78,9 +86,9 @@ int main(int argc, char** argv) {
 		UpdateZ(r, beta, z);
 	}
 	
-	time_t end = time(NULL);
+	double end = omp_get_wtime();
 	
-	printf("Version: Basic\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
+	printf("Version: OMP\n Number of threads: %d\n Matrix size: %u\n Consumed time: %lf\n",  omp_get_num_threads(), N, (end - start));
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
@@ -156,6 +164,7 @@ void MatrixToMatrixAdd(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, right.rows, right.columns);
+	#pragma omp parallel for
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] + right_matrix[i];
 	}
@@ -167,6 +176,7 @@ void MatrixFromMatrixSub(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, right.rows, right.columns);
+	#pragma omp parallel for
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] - right_matrix[i];
 	}
@@ -179,6 +189,7 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, r1, c2);
+	#pragma omp parallel for
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
 			res_matrix[i * c2 + j] = 0;
@@ -195,6 +206,7 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 	double* input_matrix = input.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, input.rows, input.columns);
+	#pragma omp parallel for
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = input_matrix[i] * scalar;
 	}
@@ -206,6 +218,7 @@ double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
+	#pragma omp for reduction (+ : res)
 	for (int i = 0; i < size; i++) {
 		res += lvect_data[i] * rvect_data[i];
 	}

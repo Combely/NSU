@@ -1,7 +1,8 @@
-#include <memory.h>
 #include <stdio.h>
-#include <cstdlib>
+#include <stdlib.h>
+#include <memory.h>
 #include <time.h>
+#include <omp.h>
 
 struct Matrix {
 	double *matrix = NULL;
@@ -34,51 +35,62 @@ double UpdateBeta(Matrix& r, double prev_scalar_r);
 void UpdateZ(Matrix& r, double beta, Matrix& z);
 
 int main(int argc, char** argv) {
-	if (argc < 2) {
-		N = 1000;
+	if (argc < 3) {
+		omp_set_num_threads(2);
+		if (argc == 2) {
+			N = atoi(argv[1]);
+		}
+		else {
+			N = 1000;
+		}
 	}
 	else {
 		N = atoi(argv[1]);
-	}
-
-	time_t start = time(NULL);
-	
-	buffer = MatrixInit(N, 1);
-	Matrix A = MatrixInit(N, N);
-	MatrixFillA(A);
-	Matrix x = MatrixInit(N, 1);
-	MatrixFillZero(x);
-	Matrix b = MatrixInit(N, 1);
-	MatrixFillRand(b);
-	Matrix r = GetR0(b, A, x);
-	Matrix z = GetZ0(r);
-	
-	int res_criteria_cter = 0, cycles_cter = 0;
-	double squared_norm_b = GetSquaredNorm(b);
-	double squared_norm_r, alpha, beta;
-	double epsilon = (1e-5) * (1e-5) * squared_norm_b;
-	
-	while (res_criteria_cter != 5) {
-		cycles_cter++;
-		if (cycles_cter > 10000) {
-				fprintf(stderr, "Unable to get result\n");
-				exit(EXIT_FAILURE);
-		}
-		if ((squared_norm_r = GetSquaredNorm(r)) < epsilon) {
-			res_criteria_cter++;
-		}
-		else {
-			res_criteria_cter = 0;
-		}
-
-		alpha = UpdateAlpha(r, A, z);
-		UpdateX(x, alpha, z);
-		UpdateR(r, alpha, A, z);
-		beta = UpdateBeta(r, squared_norm_r);
-		UpdateZ(r, beta, z);
+    	omp_set_num_threads(atoi(argv[2]));
 	}
 	
-	time_t end = time(NULL);
+	double start = omp_get_wtime();
+
+	#pragma omp parallel {
+	
+		buffer = MatrixInit(N, 1);
+		Matrix A = MatrixInit(N, N);
+		MatrixFillA(A);
+		Matrix x = MatrixInit(N, 1);
+		MatrixFillZero(x);
+		Matrix b = MatrixInit(N, 1);
+		MatrixFillRand(b);
+		Matrix r = GetR0(b, A, x);
+		Matrix z = GetZ0(r);
+		
+		int res_criteria_cter = 0, cycles_cter = 0;
+		double squared_norm_b = GetSquaredNorm(b);
+		double squared_norm_r, alpha, beta;
+		double epsilon = (1e-5) * (1e-5) * squared_norm_b;
+		
+		while (res_criteria_cter != 5) {
+			cycles_cter++;
+			if (cycles_cter > 10000) {
+					fprintf(stderr, "Unable to get result\n");
+					exit(EXIT_FAILURE);
+			}
+			if ((squared_norm_r = GetSquaredNorm(r)) < epsilon) {
+				res_criteria_cter++;
+			}
+			else {
+				res_criteria_cter = 0;
+			}
+
+			alpha = UpdateAlpha(r, A, z);
+			UpdateX(x, alpha, z);
+			UpdateR(r, alpha, A, z);
+			beta = UpdateBeta(r, squared_norm_r);
+			UpdateZ(r, beta, z);
+		}
+		
+	}
+	
+	double end = omp_get_wtime();
 	
 	printf("Version: Basic\n Matrix size: %u\n Consumed time: %ld\n", N, end - start);
 	MatrixFree(A);
@@ -187,17 +199,6 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 			}
 		}
 	}
-	/*for (int m1_row = 0; m1_row < r1; m1_row++) {
-    	for (int m1_col = 0; m1_col < c1; m1_col++) {
-			double mult_koef = left_matrix[m1_row * c1 + m1_col];
-			int m2_row = m1_col;
-			int place1 = m1_row * c2;
-			int place2 = m2_row * c2;
-			for (int m2_col = 0; m2_col < c2; m2_col++) {
-				res_matrix[place1 + m2_col] += mult_koef * right_matrix[place2 + m2_col];
-			}
-		}
-  	}	*/
 
 }
 

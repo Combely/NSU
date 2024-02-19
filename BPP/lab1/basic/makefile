@@ -1,7 +1,7 @@
 valgrind:
-	g++ grad.cpp -g -o grad
-	valgrind --leak-check=full ./grad
+	g++ main.cpp -g -o main
+	valgrind --leak-check=full ./main
 
 sanitilizer:
-	g++ -fsanitize=address -fno-omit-frame-pointer -g -o gradsan grad.cpp
-	./gradsan 1000
+	g++ -fsanitize=address -fno-omit-frame-pointer -g -o mainsan main.cpp
+	./mainsan 1000

@@ -8,9 +8,9 @@
             "type": "cppdbg",
             "name": "Launch",
             "request": "launch",
-            "program": "${workspaceFolder}/BPP/lab1/basic/grad",
-            "args": ["1000"],
-            "cwd": "${workspaceFolder}/BPP/lab1/basic/"
+            "program": "${workspaceFolder}/BPP/lab1/parallel1/main.cpp",
+            "args": ["1500"],
+            "cwd": "${workspaceFolder}/BPP/lab1/parallel1/"
         }
     ]
 }
