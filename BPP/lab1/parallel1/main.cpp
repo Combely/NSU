@@ -87,7 +87,8 @@ int main(int argc, char** argv) {
 	}
 	
 	double end = omp_get_wtime();
-	
+	#pragma omp parallel
+	#pragma omp master	
 	printf("Version: OMP\n Number of threads: %d\n Matrix size: %u\n Consumed time: %lf\n",  omp_get_num_threads(), N, (end - start));
 	MatrixFree(A);
 	MatrixFree(x);
@@ -218,7 +219,7 @@ double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
-	#pragma omp for reduction (+ : res)
+	#pragma omp parallel for reduction (+ : res)
 	for (int i = 0; i < size; i++) {
 		res += lvect_data[i] * rvect_data[i];
 	}

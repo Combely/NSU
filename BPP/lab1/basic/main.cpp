@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 	
 	time_t end = time(NULL);
 	
-	printf("Version: Basic\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
+	printf("Version: Basic\n Matrix size: %u\n Consumed time: %ld\n", N, end - start);
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
