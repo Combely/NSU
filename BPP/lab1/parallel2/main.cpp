@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
 
 	#pragma omp parallel 
 	{
+
 		#pragma omp single 
 		{
 			buffer = MatrixInit(N, 1);
@@ -64,7 +65,10 @@ int main(int argc, char** argv) {
 			Matrix b = MatrixInit(N, 1);
 			MatrixFillRand(b);
 		}
+
 		r = GetR0(b, A, x);
+
+		#pragma omp single
 		z = GetZ0(r);
 		
 		int res_criteria_cter = 0, cycles_cter = 0;
@@ -120,6 +124,7 @@ Matrix MatrixInit(int rows, int columns) {
 }
 
 void MatrixCheckSizes(Matrix& input, int exp_rows, int exp_columns) {
+	#pragma omp single
 	if (input.rows != exp_rows || input.columns != exp_columns) {
 		MatrixFree(input);
 		input = MatrixInit(exp_rows, exp_columns);
@@ -173,6 +178,7 @@ void MatrixToMatrixAdd(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, right.rows, right.columns);
+	#pragma omp for 
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] + right_matrix[i];
 	}
@@ -183,7 +189,9 @@ void MatrixFromMatrixSub(Matrix& left, Matrix& right, Matrix& res) {
 	double* left_matrix = left.matrix;
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
+	#pragma omp single
 	MatrixCheckSizes(res, right.rows, right.columns);
+	#pragma omp for 
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] - right_matrix[i];
 	}
@@ -195,7 +203,9 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 	double* left_matrix = left.matrix;
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
+	#pragma omp single
 	MatrixCheckSizes(res, r1, c2);
+	#pragma omp for
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
 			res_matrix[i * c2 + j] = 0;
@@ -211,7 +221,9 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 	int size = input.rows * input.columns;
 	double* input_matrix = input.matrix;
 	double* res_matrix = res.matrix;
+	#pragma omp single
 	MatrixCheckSizes(res, input.rows, input.columns);
+	#pragma omp for
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = input_matrix[i] * scalar;
 	}
@@ -219,10 +231,12 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 
 
 double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
+	#pragma omp single
 	double res = 0;
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
+	#pragma omp for reduction (+ : res)
 	for (int i = 0; i < size; i++) {
 		res += lvect_data[i] * rvect_data[i];
 	}
@@ -234,7 +248,9 @@ double GetSquaredNorm(Matrix& input) {
 }
 
 Matrix GetR0(Matrix& b, Matrix& A, Matrix& x) {
-	Matrix r0 = MatrixInit(N, 1);
+	Matrix r0;
+	#pragma omp single
+	r0 = MatrixInit(N, 1);
 	MatrixOnMatrixMult(A, x, buffer);
 	MatrixFromMatrixSub(b, buffer, r0);
 	return r0;

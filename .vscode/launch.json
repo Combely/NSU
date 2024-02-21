@@ -8,7 +8,7 @@
             "type": "cppdbg",
             "name": "Launch",
             "request": "launch",
-            "program": "${workspaceFolder}/BPP/lab1/parallel1/main.cpp",
+            "program": "${workspaceFolder}/BPP/lab1/parallel1/main",
             "args": ["1500"],
             "cwd": "${workspaceFolder}/BPP/lab1/parallel1/"
         }
