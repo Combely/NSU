@@ -11,6 +11,7 @@ struct Matrix {
 };
 
 int N;
+double res;
 Matrix buffer;
 
 Matrix MatrixInit(int rows, int columns);
@@ -232,7 +233,7 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 
 double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
 	#pragma omp single
-	double res = 0;
+	res = 0;
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
