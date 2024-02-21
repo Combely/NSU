@@ -50,24 +50,27 @@ int main(int argc, char** argv) {
 	}
 	
 	double start = omp_get_wtime();
+	Matrix A, x, b, r, z;
 
 	#pragma omp parallel {
-	
-		buffer = MatrixInit(N, 1);
-		Matrix A = MatrixInit(N, N);
-		MatrixFillA(A);
-		Matrix x = MatrixInit(N, 1);
-		MatrixFillZero(x);
-		Matrix b = MatrixInit(N, 1);
-		MatrixFillRand(b);
-		Matrix r = GetR0(b, A, x);
-		Matrix z = GetZ0(r);
+		#pragma omp single {
+			buffer = MatrixInit(N, 1);
+			Matrix A = MatrixInit(N, N);
+			MatrixFillA(A);
+			Matrix x = MatrixInit(N, 1);
+			MatrixFillZero(x);
+			Matrix b = MatrixInit(N, 1);
+			MatrixFillRand(b);
+		}
+		r = GetR0(b, A, x);
+		z = GetZ0(r);
 		
 		int res_criteria_cter = 0, cycles_cter = 0;
 		double squared_norm_b = GetSquaredNorm(b);
 		double squared_norm_r, alpha, beta;
 		double epsilon = (1e-5) * (1e-5) * squared_norm_b;
 		
+		#pragma omp barrier
 		while (res_criteria_cter != 5) {
 			cycles_cter++;
 			if (cycles_cter > 10000) {
@@ -87,8 +90,8 @@ int main(int argc, char** argv) {
 			beta = UpdateBeta(r, squared_norm_r);
 			UpdateZ(r, beta, z);
 		}
-		
 	}
+	
 	
 	double end = omp_get_wtime();
 	
