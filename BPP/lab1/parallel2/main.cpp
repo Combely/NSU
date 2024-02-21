@@ -52,8 +52,10 @@ int main(int argc, char** argv) {
 	double start = omp_get_wtime();
 	Matrix A, x, b, r, z;
 
-	#pragma omp parallel {
-		#pragma omp single {
+	#pragma omp parallel 
+	{
+		#pragma omp single 
+		{
 			buffer = MatrixInit(N, 1);
 			Matrix A = MatrixInit(N, N);
 			MatrixFillA(A);
@@ -95,7 +97,7 @@ int main(int argc, char** argv) {
 	
 	double end = omp_get_wtime();
 	
-	printf("Version: Basic\n Matrix size: %u\n Consumed time: %ld\n", N, end - start);
+	printf("Version: Basic\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
