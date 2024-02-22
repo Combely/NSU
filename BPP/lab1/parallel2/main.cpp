@@ -12,7 +12,7 @@ struct Matrix {
 
 int N;
 double res;
-Matrix buffer;
+Matrix buffer, shared;
 
 Matrix MatrixInit(int rows, int columns);
 void MatrixCheckSizes(Matrix& input, int exp_rows, int exp_columns);
@@ -59,19 +59,26 @@ int main(int argc, char** argv) {
 		#pragma omp single 
 		{
 			buffer = MatrixInit(N, 1);
-			Matrix A = MatrixInit(N, N);
+			A = MatrixInit(N, N);
 			MatrixFillA(A);
-			Matrix x = MatrixInit(N, 1);
+			x = MatrixInit(N, 1);
 			MatrixFillZero(x);
-			Matrix b = MatrixInit(N, 1);
+			b = MatrixInit(N, 1);
 			MatrixFillRand(b);
 		}
 
-		r = GetR0(b, A, x);
+		Matrix local = GetR0(b, A, x);
 
 		#pragma omp single
-		z = GetZ0(r);
-		
+		{
+			r.rows = local.rows;
+			r.columns = local.columns;
+			r.matrix = local.matrix;
+			shared.rows = 0;
+			shared.columns = 0;
+			shared.matrix = NULL;
+			z = GetZ0(r);
+		}
 		int res_criteria_cter = 0, cycles_cter = 0;
 		double squared_norm_b = GetSquaredNorm(b);
 		double squared_norm_r, alpha, beta;
@@ -249,12 +256,11 @@ double GetSquaredNorm(Matrix& input) {
 }
 
 Matrix GetR0(Matrix& b, Matrix& A, Matrix& x) {
-	Matrix r0;
 	#pragma omp single
-	r0 = MatrixInit(N, 1);
+	shared = MatrixInit(N, 1);
 	MatrixOnMatrixMult(A, x, buffer);
-	MatrixFromMatrixSub(b, buffer, r0);
-	return r0;
+	MatrixFromMatrixSub(b, buffer, shared);
+	return shared;
 }
 
 Matrix GetZ0(Matrix& r) {
