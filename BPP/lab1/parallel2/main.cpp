@@ -11,11 +11,11 @@ struct Matrix {
 };
 
 int N;
-double res;
-Matrix buffer, shared;
+double result;
+Matrix buffer;
 
 Matrix MatrixInit(int rows, int columns);
-void MatrixCheckSizes(Matrix& input, int exp_rows, int exp_columns);
+void MatrixCheckAndPrep(Matrix& input, int exp_rows, int exp_columns);
 void MatrixFree(Matrix& input);
 void MatrixFillA(Matrix& A);
 void MatrixFillRand(Matrix& input);
@@ -27,7 +27,7 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res);
 void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res);
 double VectorScalarMult(Matrix& lvect, Matrix& rvect);
 double GetSquaredNorm(Matrix& input);
-Matrix GetR0(Matrix& b, Matrix& A, Matrix& x);
+void GetR0(Matrix& b, Matrix& A, Matrix& x, Matrix& r0);
 Matrix GetZ0(Matrix& r);
 double UpdateAlpha(Matrix& r, Matrix& A, Matrix& z);
 void UpdateX(Matrix& x, double alpha, Matrix& z);
@@ -47,43 +47,32 @@ int main(int argc, char** argv) {
 	}
 	else {
 		N = atoi(argv[1]);
-    	omp_set_num_threads(atoi(argv[2]));
+    		omp_set_num_threads(atoi(argv[2]));
 	}
 	
 	double start = omp_get_wtime();
-	Matrix A, x, b, r, z;
 
+	Matrix A, x, b, r, z;
+	buffer = MatrixInit(N, 1);
+	MatrixFillZero(buffer);
+	A = MatrixInit(N, N);
+	MatrixFillA(A);
+	x = MatrixInit(N, 1);
+	MatrixFillZero(x);
+	b = MatrixInit(N, 1);
+	MatrixFillRand(b);
+	r = MatrixInit(N, 1);
+	
 	#pragma omp parallel 
 	{
-
-		#pragma omp single 
-		{
-			buffer = MatrixInit(N, 1);
-			A = MatrixInit(N, N);
-			MatrixFillA(A);
-			x = MatrixInit(N, 1);
-			MatrixFillZero(x);
-			b = MatrixInit(N, 1);
-			MatrixFillRand(b);
-		}
-
-		Matrix local = GetR0(b, A, x);
-
+		GetR0(b, A, x, r);
 		#pragma omp single
-		{
-			r.rows = local.rows;
-			r.columns = local.columns;
-			r.matrix = local.matrix;
-			shared.rows = 0;
-			shared.columns = 0;
-			shared.matrix = NULL;
-			z = GetZ0(r);
-		}
+		z = GetZ0(r);
 		int res_criteria_cter = 0, cycles_cter = 0;
-		double squared_norm_b = GetSquaredNorm(b);
+		double squared_norm_b = VectorScalarMult(b, b);
 		double squared_norm_r, alpha, beta;
 		double epsilon = (1e-5) * (1e-5) * squared_norm_b;
-		
+		printf("Thread %d, squared norm b = %lf, result = %lf\n", omp_get_thread_num(), squared_norm_b, result);
 		#pragma omp barrier
 		while (res_criteria_cter != 5) {
 			cycles_cter++;
@@ -106,10 +95,9 @@ int main(int argc, char** argv) {
 		}
 	}
 	
-	
 	double end = omp_get_wtime();
-	
-	printf("Version: Basic\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
+
+	printf("Version: Parallel V2\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
@@ -127,15 +115,15 @@ Matrix MatrixInit(int rows, int columns) {
 	if (unfilled.matrix == NULL) {
 		printf("Memory is not allocated.\n");
 		exit(0);
-    }
+    	}
 	return unfilled;
 }
 
-void MatrixCheckSizes(Matrix& input, int exp_rows, int exp_columns) {
-	#pragma omp single
+void MatrixCheckAndPrep(Matrix& input, int exp_rows, int exp_columns) {
 	if (input.rows != exp_rows || input.columns != exp_columns) {
 		MatrixFree(input);
 		input = MatrixInit(exp_rows, exp_columns);
+		MatrixFillZero(input);
 	}
 }
 
@@ -154,11 +142,11 @@ void MatrixFillA(Matrix& A) {
 	for (int row = 0; row < rows; row++) {
 		for (int column = 0; column <= row; column++) {
 			A_matrix[row * columns + column] = rand() % 11;
-      		if (row == column) {
+      			if (row == column) {
 				A_matrix[row * columns + column] += weight;
 				continue;
 			}
-      		A_matrix[column * columns + row] = A_matrix[row * columns + column];
+      			A_matrix[column * columns + row] = A_matrix[row * columns + column];
 		} 
 	}
 }
@@ -185,7 +173,8 @@ void MatrixToMatrixAdd(Matrix& left, Matrix& right, Matrix& res) {
 	double* left_matrix = left.matrix;
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
-	MatrixCheckSizes(res, right.rows, right.columns);
+	#pragma omp single
+	MatrixCheckAndPrep(res, right.rows, right.columns);
 	#pragma omp for 
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] + right_matrix[i];
@@ -198,7 +187,7 @@ void MatrixFromMatrixSub(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	#pragma omp single
-	MatrixCheckSizes(res, right.rows, right.columns);
+	MatrixCheckAndPrep(res, right.rows, right.columns);
 	#pragma omp for 
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] - right_matrix[i];
@@ -212,7 +201,7 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	#pragma omp single
-	MatrixCheckSizes(res, r1, c2);
+	MatrixCheckAndPrep(res, r1, c2);
 	#pragma omp for
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
@@ -230,7 +219,7 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 	double* input_matrix = input.matrix;
 	double* res_matrix = res.matrix;
 	#pragma omp single
-	MatrixCheckSizes(res, input.rows, input.columns);
+	MatrixCheckAndPrep(res, input.rows, input.columns);
 	#pragma omp for
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = input_matrix[i] * scalar;
@@ -239,28 +228,26 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 
 
 double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
+	#pragma omp barrier
 	#pragma omp single
-	res = 0;
+	result = 0;
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
-	#pragma omp for reduction (+ : res)
+	#pragma omp for reduction (+ : result)
 	for (int i = 0; i < size; i++) {
-		res += lvect_data[i] * rvect_data[i];
+		result += lvect_data[i] * rvect_data[i];
 	}
-	return res;
+	return result;
 }
 
 double GetSquaredNorm(Matrix& input) {
 	return VectorScalarMult(input, input);
 }
 
-Matrix GetR0(Matrix& b, Matrix& A, Matrix& x) {
-	#pragma omp single
-	shared = MatrixInit(N, 1);
+void GetR0(Matrix& b, Matrix& A, Matrix& x, Matrix& r0) {
 	MatrixOnMatrixMult(A, x, buffer);
-	MatrixFromMatrixSub(b, buffer, shared);
-	return shared;
+	MatrixFromMatrixSub(b, buffer, r0);
 }
 
 Matrix GetZ0(Matrix& r) {
@@ -295,3 +282,4 @@ void UpdateZ(Matrix& r, double beta, Matrix& z) {
 	MatrixOnScalarMult(z, beta, z);
 	MatrixToMatrixAdd(r, z, z);
 }
+
