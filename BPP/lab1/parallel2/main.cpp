@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
 		double squared_norm_b = VectorScalarMult(b, b);
 		double squared_norm_r, alpha, beta;
 		double epsilon = (1e-5) * (1e-5) * squared_norm_b;
-		printf("Thread %d, squared norm b = %lf, result = %lf\n", omp_get_thread_num(), squared_norm_b, result);
+		//printf("Thread %d, squared norm b = %lf, result = %lf\n", omp_get_thread_num(), squared_norm_b, result);
 		#pragma omp barrier
 		while (res_criteria_cter != 5) {
 			cycles_cter++;
@@ -96,8 +96,10 @@ int main(int argc, char** argv) {
 	}
 	
 	double end = omp_get_wtime();
-
-	printf("Version: Parallel V2\n Matrix size: %u\n Consumed time: %lf\n", N, end - start);
+	
+	#pragma omp parallel
+	#pragma omp master
+	printf("Version: Parallel V2\nNumber of threads: %d\nMatrix size: %u\nConsumed time: %lf\n", omp_get_num_threads(), N, end - start);
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);

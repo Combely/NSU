@@ -4,4 +4,4 @@ valgrind:
 
 sanitilizer:
 	g++ -fsanitize=address -fno-omit-frame-pointer -g -o mainsan main.cpp
-	./mainsan 1000
+	./mainsan 1500

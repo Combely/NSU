@@ -88,8 +88,8 @@ int main(int argc, char** argv) {
 	
 	double end = omp_get_wtime();
 	#pragma omp parallel
-	#pragma omp master	
-	printf("Version: OMP\n Number of threads: %d\n Matrix size: %u\n Consumed time: %lf\n",  omp_get_num_threads(), N, (end - start));
+	#pragma omp master
+	printf("Version: Parallel V1\nNumber of threads: %d\nMatrix size: %u\nConsumed time: %lf\n",  omp_get_num_threads(), N, (end - start));
 	MatrixFree(A);
 	MatrixFree(x);
 	MatrixFree(b);
@@ -165,7 +165,7 @@ void MatrixToMatrixAdd(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, right.rows, right.columns);
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static, 175)
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] + right_matrix[i];
 	}
@@ -177,7 +177,7 @@ void MatrixFromMatrixSub(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, right.rows, right.columns);
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static, 175)
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = left_matrix[i] - right_matrix[i];
 	}
@@ -190,7 +190,7 @@ void MatrixOnMatrixMult(Matrix& left, Matrix& right, Matrix& res) {
 	double* right_matrix = right.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, r1, c2);
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static)
 	for (int i = 0; i < r1; i++) {
 		for (int j = 0; j < c2; j++) {
 			res_matrix[i * c2 + j] = 0;
@@ -207,7 +207,7 @@ void MatrixOnScalarMult(Matrix& input, double scalar, Matrix& res) {
 	double* input_matrix = input.matrix;
 	double* res_matrix = res.matrix;
 	MatrixCheckSizes(res, input.rows, input.columns);
-	#pragma omp parallel for
+	#pragma omp parallel for schedule(static, 175)
 	for (int i = 0; i < size; i++) {
 		res_matrix[i] = input_matrix[i] * scalar;
 	}
@@ -219,7 +219,7 @@ double VectorScalarMult(Matrix& lvect, Matrix& rvect) {
 	double* lvect_data = lvect.matrix;
 	double* rvect_data = rvect.matrix;
 	int size = lvect.rows;
-	#pragma omp parallel for reduction (+ : res)
+	#pragma omp parallel for reduction (+ : res) schedule(static, 175)
 	for (int i = 0; i < size; i++) {
 		res += lvect_data[i] * rvect_data[i];
 	}
